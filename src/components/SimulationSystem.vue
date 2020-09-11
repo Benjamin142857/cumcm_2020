@@ -53,7 +53,7 @@
       <el-card shadow="never">
         <span style="font-size: 14px;color: darkgray">output</span>
 
-        <!-- 迭代次数，总余额，总还贷率，总盈利  -->
+        <!-- 迭代次数，总余额，总还贷率，总盈利, 迭代过程最大总盈利  -->
         <el-row style="margin: 20px 0">
           <el-col :span="3">
             <span style="font-size: 12px">当前迭代次数: </span>
@@ -81,6 +81,14 @@
             </span>
             <span style="font-size: 12px">万</span>
           </el-col>
+
+          <el-col :span="5">
+            <span style="font-size: 12px">迭代过程最大总利润: </span>
+            <span style="font-weight: bold;font-size: 18px">
+              {{ outputData.maxRevenue.toFixed(2) }}
+            </span>
+            <span style="font-size: 12px">万</span>
+          </el-col>
         </el-row>
 
         <!-- A流失率，B流失率，C流失率，总流失率  -->
@@ -96,7 +104,7 @@
           <el-col :span="4">
             <span style="font-size: 12px">B级客户流失率: </span>
             <span style="font-weight: bold;font-size: 18px">
-              {{ outputData.wastageRateClientA.length>0? (outputData.wastageRateClientA.slice(-1)[0]*100).toFixed(2): '0.00' }}
+              {{ outputData.wastageRateClientB.length>0? (outputData.wastageRateClientB.slice(-1)[0]*100).toFixed(2): '0.00' }}
             </span>
             <span> %</span>
           </el-col>
@@ -104,7 +112,7 @@
           <el-col :span="4">
             <span style="font-size: 12px">C级客户流失率: </span>
             <span style="font-weight: bold;font-size: 18px">
-              {{ outputData.wastageRateClientA.length>0? (outputData.wastageRateClientA.slice(-1)[0]*100).toFixed(2): '0.00' }}
+              {{ outputData.wastageRateClientC.length>0? (outputData.wastageRateClientC.slice(-1)[0]*100).toFixed(2): '0.00' }}
             </span>
             <span> %</span>
           </el-col>
@@ -115,6 +123,19 @@
 <!--              {{ outputData.wastageRateClientA.length>0? (outputData.wastageRateClientA.slice(-1)[0]*100).toFixed(2): '0.00' }}-->
 <!--            </span>-->
 <!--          </el-col>-->
+        </el-row>
+
+        <!-- 绘图 -->
+        <el-row style="border-top: solid 0.3px rgba(200,200,200,0.5);border-bottom: solid 0.3px rgba(200,200,200,0.5);padding: 20px 0">
+          <el-col :span="8">
+            <chart ref="tableTotalRevenue" :options="tableTotalRevenue" :auto-resize="true" style="width: 94%;max-height: 320px;"></chart>
+          </el-col>
+          <el-col :span="8">
+            <chart ref="tableRepayRate" :options="tableRepayRate" :auto-resize="true" style="width: 94%;max-height: 320px;"></chart>
+          </el-col>
+          <el-col :span="8">
+            <chart ref="tableLossRate" :options="tableLossRate" :auto-resize="true" style="width: 94%;max-height: 320px;"></chart>
+          </el-col>
         </el-row>
 
       </el-card>
@@ -150,6 +171,9 @@
                 prop="score"
                 label="得分"
                 width="60">
+              <template slot-scope="scope">
+                <span>{{ scope.row.score.toFixed(2) }}</span>
+              </template>
             </el-table-column>
             <el-table-column
                 prop="creditLimit"
@@ -239,6 +263,163 @@
 
       }
     },
+    computed: {
+      // 总收益图表
+      tableTotalRevenue: function () {
+        return {
+          title: {
+            left: 'right',
+            text: '总收益迭代曲线',
+            textStyle: {
+              fontSize: 14,
+            },
+          },
+          xAxis: {
+            type: 'category',
+            data: this.outputData.totalIter,
+            name: 'Iter',
+            nameRotate: 0,
+          },
+          yAxis: {
+            type: 'value',
+            name: '总收益 (万)',
+          },
+          series: [{
+            data: this.outputData.totalRevenue,
+            type: 'line',
+            smooth: true
+          }],
+          dataZoom: [{
+            type: 'inside',
+            start: 0,
+            end: this.inputData.iterN,
+          }, {
+            start: 0,
+            end: this.outputData.iterN,
+            handleSize: '80%',
+            handleStyle: {
+              color: '#fff',
+              shadowBlur: 2,
+              shadowColor: 'rgba(0, 0, 0, 0.6)',
+              shadowOffsetX: 2,
+              shadowOffsetY: 2
+            }
+          }],
+        };
+      },
+      // 总还贷率图表
+      tableRepayRate: function () {
+        return {
+          title: {
+            text: '总还贷率迭代曲线',
+            left: 'right',
+            textStyle: {
+              fontSize: 14,
+            },
+          },
+          xAxis: {
+            type: 'category',
+            data: this.outputData.totalIter,
+            name: 'Iter',
+            nameRotate: 0,
+          },
+          yAxis: {
+            type: 'value',
+            name: '        总还贷率 (x100%)',
+          },
+          series: [{
+            data: this.outputData.repayRate,
+            type: 'line',
+            smooth: true
+          }],
+          dataZoom: [{
+            type: 'inside',
+            start: 0,
+            end: this.inputData.iterN,
+          }, {
+            start: 0,
+            end: this.outputData.iterN,
+            handleSize: '80%',
+            handleStyle: {
+              color: '#fff',
+              shadowBlur: 2,
+              shadowColor: 'rgba(0, 0, 0, 0.6)',
+              shadowOffsetX: 2,
+              shadowOffsetY: 2
+            }
+          }],
+        };
+
+      },
+      // ABC流失率图表
+      tableLossRate: function () {
+        return {
+          title: {
+            text: 'ABC流失率迭代曲线',
+            left: 'right',
+            textStyle: {
+              fontSize: 14,
+            },
+          },
+          legend: {
+            show: true,
+            data: ['Client A', 'Client B', 'Client C'],
+            itemHeight: 8,
+            textStyle: {
+              fontSize: 8,
+            },
+            left: 'left',
+          },
+          xAxis: {
+            type: 'category',
+            data: this.outputData.totalIter,
+            name: 'Iter',
+            nameRotate: 0,
+          },
+          yAxis: {
+            type: 'value',
+            name: '    流失率 (x100%)',
+          },
+          series: [
+            {
+              data: this.outputData.wastageRateClientA,
+              type: 'line',
+              smooth: true,
+              name: 'Client A',
+            },
+            {
+              data: this.outputData.wastageRateClientB,
+              type: 'line',
+              smooth: true,
+              name: 'Client B',
+            },
+            {
+              data: this.outputData.wastageRateClientC,
+              type: 'line',
+              smooth: true,
+              name: 'Client C',
+            },
+          ],
+          dataZoom: [{
+            type: 'inside',
+            start: 0,
+            end: this.inputData.iterN,
+          }, {
+            start: 0,
+            end: this.outputData.iterN,
+            handleSize: '80%',
+            handleStyle: {
+              color: '#fff',
+              shadowBlur: 2,
+              shadowColor: 'rgba(0, 0, 0, 0.6)',
+              shadowOffsetX: 2,
+              shadowOffsetY: 2
+            }
+          }],
+        };
+
+      },
+    },
     methods: {
       // 初始化企业数据 (Init)
       initCompanyData: function () {
@@ -247,16 +428,23 @@
 
       // 初始化输出数据 (Init)
       initOutputData: function () {
+        let totalIter = [];
+        for (let i=0; i<this.inputData.iterN; i++) {
+          totalIter.push(i);
+        }
+
         this.outputData = {
           totalClientA: this.companyData.filter(item=>{return item.grade === 'A'}).length,      // A客户总数
           totalClientB: this.companyData.filter(item=>{return item.grade === 'B'}).length,      // B客户总数
           totalClientC: this.companyData.filter(item=>{return item.grade === 'C'}).length,      // C客户总数
 
           iterNow: 0,                                   // 当前迭代次数
+          maxRevenue: 0,                                // 迭代过程最大总盈利
           creditBalance: this.inputData.creditTotal,    // 信贷余额池
           wastageClientA: 0,                            // A客户流失数
           wastageClientB: 0,                            // B客户流失数
           wastageClientC: 0,                            // C客户流失数
+          totalIter: totalIter,                         // 总迭代时序表 - 仅用于绘图
           wastageRateClientA: [],                       // A客户流失率时序表 (%)
           wastageRateClientB: [],                       // B客户流失率时序表 (%)
           wastageRateClientC: [],                       // C客户流失率时序表 (%)
@@ -373,12 +561,14 @@
         this.outputData.wastageRateClientB.push(this.outputData.wastageClientB / this.outputData.totalClientB);
         this.outputData.wastageRateClientC.push(this.outputData.wastageClientC / this.outputData.totalClientC);
         this.outputData.repayRate.push(this.companyData.filter(comp=>{return comp.isRepay}).length / this.companyData.length);
-        this.outputData.totalRevenue.push(eval(this.companyData.map(comp=>{
+        let revenue = eval(this.companyData.map(comp=>{
           if (comp.loss) {
             return 0;
           }
           return comp.isRepay? comp.creditLimit*comp.interestRate: -comp.creditLimit;
-        }).join("+")));
+        }).join("+"));
+        this.outputData.totalRevenue.push(revenue);
+        this.outputData.maxRevenue = this.outputData.maxRevenue < revenue? revenue: this.outputData.maxRevenue;
       },
 
       // 模型库 (Model)
@@ -412,7 +602,6 @@
         console.log(comp);
         return (Math.random()+4)/5;
       },
-
 
       // 睡眠 (Tools)
       sleep: function (time) {

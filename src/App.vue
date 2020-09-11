@@ -1,17 +1,16 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <SimulationSystem/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import SimulationSystem from './components/SimulationSystem.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    SimulationSystem
   }
 }
 </script>
@@ -21,8 +20,11 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  background-color: rgb(240, 240, 240);
+  margin: 0;
+  padding: 20px;
+  min-height: 700px;
+  height: auto;
+  width: 100%;
 }
 </style>
